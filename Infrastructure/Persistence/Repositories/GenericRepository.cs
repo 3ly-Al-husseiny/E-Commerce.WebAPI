@@ -10,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace Persistence.Repositories
 {
-    public class GenericRepository<TEntity, TKey> where TEntity : BaseEntity<TKey> , IGenericRepository<TEntity, TKey>
+    public class GenericRepository<TEntity, TKey>  : IGenericRepository<TEntity, TKey> 
+                                                     where TEntity : BaseEntity<TKey>
     {
         private readonly E_CommerceDbContext _context;
 
@@ -22,6 +23,13 @@ namespace Persistence.Repositories
 
         public async Task<IEnumerable<TEntity>> GetAllAsync(bool trackChanges = false)
         {
+            if (typeof(TEntity) == typeof(Product))
+            {
+                if (trackChanges)
+                    return await _context.Products.Include(P => P.ProductBrand).Include(P => P.ProductType).ToListAsync() as IEnumerable<TEntity>;
+
+                return await _context.Products.Include(P => P.ProductBrand).Include(P => P.ProductType).AsNoTracking().ToListAsync() as IEnumerable<TEntity>;
+            }
             if (trackChanges)
                 return await _context.Set<TEntity>().ToListAsync();
             
@@ -30,6 +38,12 @@ namespace Persistence.Repositories
 
         public async Task<TEntity?> GetAsync(int id)
         {
+            if (typeof(TEntity) == typeof(Product))
+            {
+                return await _context.Products.Include(P => P.ProductBrand).Include(P => P.ProductType).FirstOrDefaultAsync(P => P.Id == id) as TEntity;
+            }
+
+
             return await _context.Set<TEntity>().FindAsync(id);
         }
 

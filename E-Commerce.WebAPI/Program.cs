@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Persistence;
 using Persistence.Data.Contexts;
+using Persistence.Repositories;
+using Services;
+using Services_Abstraction;
 using System.Threading.Tasks;
 
 namespace E_Commerce.WebAPI
@@ -36,6 +39,16 @@ namespace E_Commerce.WebAPI
 
             // Allow DI For DbInitializer
             builder.Services.AddScoped<IDbInitializer, DbInitializer>();
+
+
+
+            builder.Services.AddAutoMapper(typeof(AssemblyReferenceAutoMapper).Assembly);
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<IServiceManager, ServiceManager>();
+
+
+
+
             #endregion
 
 

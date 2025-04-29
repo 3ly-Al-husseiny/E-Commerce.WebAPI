@@ -2,6 +2,7 @@
 using Domain.Contracts;
 using Domain.Models;
 using Microsoft.VisualBasic;
+using Services.Specifications;
 using Services_Abstraction;
 using Shared;
 using System;
@@ -22,9 +23,12 @@ namespace Services
             _mapper = mapper;
         }
 
+        
         public async Task<ProductResultDto?> GetProductByIdAsync(int id)
         {
-            var product = await _unitOfWork.GetRepository<Product, int>().GetAsync(id);
+            var spec = new ProductWithBrandsAndTypesSpecifications(id);
+
+            var product = await _unitOfWork.GetRepository<Product, int>().GetAsync(spec);
             if (product is null)
                 return null;
             var result = _mapper.Map<ProductResultDto>(product);
@@ -38,17 +42,27 @@ namespace Services
             return result;
         }
 
-        public async Task<IEnumerable<ProductResultDto>> GetAllProductAsync()
+        public async Task<PagicationResponse<ProductResultDto>> GetAllProductAsync(ProductSpecificationParameters specParams)
         {
+
+            var spec = new ProductWithBrandsAndTypesSpecifications(specParams);
+
             // Get All Products Throught ProductRepository
             // Mapping From IEnumerable<Product> to IEnumerable<ProductResultDto> --> Using Automapper
 
-            var products = await _unitOfWork.GetRepository<Product, int>().GetAllAsync();
+            var products = await _unitOfWork.GetRepository<Product, int>().GetAllAsync(spec);
+
+
+            var specCount = new ProductWithCountSpecifications(specParams);
+
+
+            var Count = await _unitOfWork.GetRepository<Product, int>().CountAsync(specCount);
+            //var Count = products.Count();
 
             // Mapping IEnumerable<Product> To IEnumerable<ProductResultDto> : Auto Mapper
 
             var result = _mapper.Map<IEnumerable<ProductResultDto>>(products);
-            return result;
+            return new PagicationResponse<ProductResultDto>(specParams.PageIndex,specParams.PageSize,0,result);
         }
 
         public async Task<IEnumerable<TypeResultDto>> GetAllTypesAsync()

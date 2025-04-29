@@ -74,6 +74,7 @@ namespace E_Commerce.WebAPI
 
             app.UseAuthorization();
 
+            app.UseStaticFiles();
 
             app.MapControllers();
 

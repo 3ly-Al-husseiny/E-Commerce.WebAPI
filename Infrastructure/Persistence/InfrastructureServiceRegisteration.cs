@@ -29,6 +29,7 @@ namespace Presentation
             {
                 return ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis"));
             });
+            services.AddScoped<ICachRepository, CachRepository>();
             return services;
         }   
 

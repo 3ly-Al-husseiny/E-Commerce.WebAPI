@@ -57,6 +57,7 @@ namespace E_Commerce.WebAPI.Extensions
             return services;
         }
 
+        
         public static async Task<WebApplication> ConfigureMiddlewares (this WebApplication app) 
         {
             await app.InitializeDataBaseAsync();
@@ -64,12 +65,10 @@ namespace E_Commerce.WebAPI.Extensions
 
             if (app.Environment.IsDevelopment())
             {
-                app.UseSwagger();
+                app.UseRouting();
+            app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
-
-
 
             app.UseHttpsRedirection();
 
@@ -79,7 +78,7 @@ namespace E_Commerce.WebAPI.Extensions
 
             app.MapControllers();
 
-            
+            app.UseGlobalErrorHandling();
 
             return app;
         }

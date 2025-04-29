@@ -28,7 +28,6 @@ namespace E_Commerce.WebAPI
             await app.ConfigureMiddlewares();
             app.Run();
 
-           
         }
     }
 }

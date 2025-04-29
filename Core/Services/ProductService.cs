@@ -63,7 +63,7 @@ namespace Services
             // Mapping IEnumerable<Product> To IEnumerable<ProductResultDto> : Auto Mapper
 
             var result = _mapper.Map<IEnumerable<ProductResultDto>>(products);
-            return new PagicationResponse<ProductResultDto>(specParams.PageIndex,specParams.PageSize,0,result);
+            return new PagicationResponse<ProductResultDto>(specParams.PageIndex,specParams.PageSize,Count,result);
         }
 
         public async Task<IEnumerable<TypeResultDto>> GetAllTypesAsync()

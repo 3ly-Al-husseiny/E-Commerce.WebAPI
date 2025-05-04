@@ -10,14 +10,20 @@ namespace Services
 {
     public class CachService(ICachRepository cachRepository) : ICachService
     {
-        public Task<string?> GetCachValueAsync(string key)
+        public async Task<string?> GetCachValueAsync(string key)
         {
-            throw new NotImplementedException();
+            // Use the ICachRepository to retrieve the cached value
+            var cachedValue = await cachRepository.GetAsync(key);
+
+            // Return the cached value, or null if it doesn't exist
+            return string.IsNullOrEmpty(cachedValue) ? null : cachedValue;
         }
 
-        public Task SetCacheValueAsync(string key, object value, TimeSpan duration)
+
+        public async Task SetCacheValueAsync(string key, object value, TimeSpan duration)
         {
-            throw new NotImplementedException();
+            // Use the ICachRepository to set the cached value
+            await cachRepository.SetAsync(key, value, duration);
         }
     }
 }

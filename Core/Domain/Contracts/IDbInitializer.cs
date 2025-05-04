@@ -17,6 +17,7 @@ namespace Domain.Contracts
 
         // Always Deal With The DataBase with --> Async
         Task InitializeAsync();
+        Task InitializeIdentityAsync();
 
     }
 }

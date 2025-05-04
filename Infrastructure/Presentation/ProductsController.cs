@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Presentation.Attributes;
 using Services_Abstraction;
@@ -31,11 +32,13 @@ namespace Presentation
         }
 
         // endpoint : public non-static method
-        [HttpGet()] // endpoint : GET:api/Products
+        [HttpGet("products")] // endpoint : GET:api/Products
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(PagicationResponse<ProductResultDto>))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorDetails))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorDetails))]
         [Cach(60)]
+        [Authorize]
+
         public async Task<ActionResult<PagicationResponse<ProductResultDto>>> GetAllProducts([FromQuery] ProductSpecificationParameters SpecParams)
         {
             var result = await serviceManager.ProductService.GetAllProductAsync(SpecParams);
@@ -49,6 +52,8 @@ namespace Presentation
         [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorDetails))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorDetails))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrorDetails))]
+        [Authorize]
+
         public async Task<ActionResult<TypeResultDto>> GetAllTypes()
         {
             var result = await serviceManager.ProductService.GetAllTypesAsync();
@@ -62,6 +67,7 @@ namespace Presentation
         [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(ErrorDetails))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrorDetails))]
         [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrorDetails))]
+        [Authorize]
 
         public async Task<ActionResult<BrandResultDto>> GetAllBrands()
         {

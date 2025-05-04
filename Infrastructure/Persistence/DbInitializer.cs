@@ -1,7 +1,11 @@
 ﻿using Domain.Contracts;
 using Domain.Models;
+using Domain.Models.Identity;
+using Domain.Models.Orders;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Persistence.Data.Contexts;
+using Persistence.Data.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,10 +25,16 @@ namespace Persistence
          */
 
         private readonly E_CommerceDbContext _context;
-
-        public DbInitializer(E_CommerceDbContext context)
+        private readonly E_CommerceIdentityDbContext _identityContext;
+        private readonly UserManager<AppUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
+        public DbInitializer(E_CommerceDbContext context, E_CommerceIdentityDbContext identityContext,
+            UserManager<AppUser> userManager , RoleManager<IdentityRole> roleManager)
         {
             _context = context;
+            _identityContext = identityContext;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
 
@@ -86,7 +96,7 @@ namespace Persistence
                         await _context.ProductTypes.AddRangeAsync(types);
                         await _context.SaveChangesAsync();
                     }
-
+                }
 
 
                     // Seeding ProductBrand from Json Files.
@@ -137,8 +147,24 @@ namespace Persistence
                         }
                     }
 
+                    if (!_context.DeliveryMethods.Any())
+                    {
+                        // Read Data From Json Files. 
+                        var deliveryData = File.ReadAllText(@"..\Infrastructure\Persistence\Data\SeedingFiles\delivery.json");
 
-                }
+                        // Deserialize the jsonString
+
+                        var delivery = JsonSerializer.Deserialize<List<DeliveryMethod>>(deliveryData);
+
+                        // Seed the Products in the DataBase. 
+                        // Check if the products is null or Empty. 
+
+                        if (delivery is not null && delivery.Any())
+                        {
+                            await _context.DeliveryMethods.AddRangeAsync(delivery);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
             }
 
             catch (Exception)
@@ -147,6 +173,57 @@ namespace Persistence
                 throw;
             }
 
+        }
+
+        public async Task InitializeIdentityAsync()
+        {
+            if (_identityContext.Database.GetPendingMigrations().Any())
+            {
+                // Apply the Pending Migrations && Create The DataBase if it Doesn't Exist.
+                await _identityContext.Database.MigrateAsync();
+            }
+
+
+            // Seeding Roles
+
+            if (!_roleManager.Roles.Any())
+            {
+                await _roleManager.CreateAsync(new IdentityRole()
+                {
+                    Name = "SuperAdmin",
+                });
+                await _roleManager.CreateAsync(new IdentityRole()
+                {
+                    Name = "Admin",
+                });
+            }
+
+
+            // Seeding SuperAdmin , Admin
+            if (!_userManager.Users.Any())
+            {
+                var superAdminUser = new AppUser()
+                {
+                    DisplayName = "Super Admin",
+                    Email = "SuperAdmin@gmail.com",
+                    UserName = "SuperAdmin",
+                    PhoneNumber = "01000000000",
+                };
+
+                var adminUser = new AppUser()
+                {
+                   DisplayName = "Admin",
+                   Email = "Admin@gmail.com",
+                   UserName = "Admin",
+                   PhoneNumber = "01000000000",
+                };
+
+                await _userManager.CreateAsync(superAdminUser,"P@ssoW0d");
+                await _userManager.CreateAsync(adminUser,"P@ssoW0d");
+
+                await _userManager.AddToRoleAsync(superAdminUser, "SuperAdmin");
+                await _userManager.AddToRoleAsync(adminUser, "Admin");
+            }
         }
     }
 }

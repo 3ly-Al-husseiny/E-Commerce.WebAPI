@@ -6,6 +6,15 @@ using System.Runtime.CompilerServices;
 using Domain.Contracts;
 using E_Commerce.WebAPI.Middlewares;
 using Presentation;
+using Domain.Models.Identity;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using Persistence.Data.Contexts;
+using Shared;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Persistence.Data.Identity;
 namespace E_Commerce.WebAPI.Extensions
 {
     public static class Extesions
@@ -14,11 +23,12 @@ namespace E_Commerce.WebAPI.Extensions
         {
             services.AddBuiltInServices();
             services.AddSwaggerServices();
-            services.ConfigureServices();
+            services.AddIdentityServices(); 
             services.AddInfrastructureServices(configuration);
-            services.AddApplicationServices();
-
-            return services;  
+            services.AddApplicationServices(configuration);
+            services.ConfigureServices();
+            services.ConfigureJwtOptions(configuration);
+            return services;
         }
 
         private static IServiceCollection AddBuiltInServices(this IServiceCollection services)
@@ -57,8 +67,8 @@ namespace E_Commerce.WebAPI.Extensions
             return services;
         }
 
-        
-        public static async Task<WebApplication> ConfigureMiddlewares (this WebApplication app) 
+
+        public static async Task<WebApplication> ConfigureMiddlewares(this WebApplication app)
         {
             await app.InitializeDataBaseAsync();
             app.UseMiddleware<GlobalErrorHandlingMiddlewares>();
@@ -66,7 +76,7 @@ namespace E_Commerce.WebAPI.Extensions
             if (app.Environment.IsDevelopment())
             {
                 app.UseRouting();
-            app.UseSwagger();
+                app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
@@ -87,7 +97,8 @@ namespace E_Commerce.WebAPI.Extensions
         {
             using var scope = app.Services.CreateScope();
             var dbInitializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
-            await dbInitializer.InitializeAsync(); // Call The Function
+            await dbInitializer.InitializeAsync();
+            await dbInitializer.InitializeIdentityAsync();
             return app;
         }
 
@@ -97,5 +108,39 @@ namespace E_Commerce.WebAPI.Extensions
             return app;
         }
 
+        private static IServiceCollection AddIdentityServices(this IServiceCollection services)
+        {
+            services.AddIdentity<AppUser, IdentityRole>()
+           .AddEntityFrameworkStores<E_CommerceIdentityDbContext>();
+            return services;
+
+        }
+
+        private static IServiceCollection ConfigureJwtOptions(this IServiceCollection services, IConfiguration configuration) 
+        {
+            var jwtOptions = configuration.GetSection("JwtOptions").Get<JwtOptions>();
+
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(options =>
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = jwtOptions.Issuer,
+
+                ValidateAudience = true,
+                ValidAudience = jwtOptions.Audience,
+
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
+
+                ValidateLifetime = true,
+
+            });
+
+            return services;
+        }
     }
 }
